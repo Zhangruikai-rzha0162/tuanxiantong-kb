@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统架构 — 团险通 · 保全知识库</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">系统架构</div>
+</header>
+
+<div class="page">
+<div class="doc-layout">
+
+  <aside class="doc-side">
+    <div class="side-title">本页目录</div>
+    <a href="#overview">整体工作架构</a>
+    <a href="#duty">双系统职责分工</a>
+    <a href="#split">校验分工原则</a>
+    <a href="#switch">校验开关设计</a>
+    <a href="#channel">渠道标识与账号</a>
+    <a href="#infra">配套系统</a>
+    <a href="#roadmap">后续优化方向</a>
+  </aside>
+
+  <main class="doc-main">
+
+    <div class="doc-block" id="overview">
+      <h2>整体工作架构</h2>
+      <p>所有系统测试与业务均围绕"<a class="xref" href="terms.html#tqt">团险通</a> / 核心"双系统协作展开：团险通面向<a class="xref" href="terms.html#agent">经办人</a>（客户），核心面向业务处理人员（运营管理部）。整体链路四步：</p>
+      <div class="flow">
+        <div class="flow-lane">
+          <div class="lane-label">① 客户侧<span>投保单位经办人</span></div>
+          <div class="lane-body">
+            <span class="fnode">经办人登录团险通</span><span class="farrow">→</span>
+            <span class="fnode">查询保单 / 发起保全</span>
+          </div>
+        </div>
+        <div class="flow-lane">
+          <div class="lane-label">② 团险通<span>前端系统</span></div>
+          <div class="lane-body">
+            <span class="fnode">轻量校验（即时反馈）</span><span class="farrow">→</span>
+            <span class="fnode api">调用核心 <b>12 个接口</b></span><span class="farrow">→</span>
+            <span class="fnode">接收批处理通知</span>
+          </div>
+        </div>
+        <div class="flow-lane">
+          <div class="lane-label">③ <a class="xref" href="terms.html#core">核心系统</a><span>后台业务中枢</span></div>
+          <div class="lane-body">
+            <span class="fnode sys">全量校验</span>
+            <span class="fnode sys">收付费</span>
+            <span class="fnode sys">保单数据管理</span>
+            <span class="fnode sys"><a class="xref" href="terms.html#endorsement-doc">批单</a> / <a class="xref" href="terms.html#notice">通知书</a>生成打印</span>
+            <span class="fnode sys"><a class="xref" href="terms.html#problem">问题件</a>管理与核销</span>
+          </div>
+        </div>
+        <div class="flow-lane">
+          <div class="lane-label">④ 运营侧<span>运营管理部</span></div>
+          <div class="lane-body">
+            <span class="fnode">保全审批</span>
+            <span class="fnode">二次核保资料补充处理</span>
+            <span class="fnode">问题件下发 / 管理</span>
+            <span class="fnode">保全撤销 / 终止</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-block" id="duty">
+      <h2>双系统职责分工</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>维度</th><th>团险通（前端）</th><th>核心系统（后台）</th></tr></thead>
+        <tbody>
+          <tr><td><b>服务对象</b></td><td>投保单位<a class="xref" href="terms.html#agent">经办人</a>、经代人</td><td>运营管理部业务处理人员</td></tr>
+          <tr><td><b>设计取向</b></td><td>即时反馈、操作体验</td><td>数据一致性、业务严谨</td></tr>
+          <tr><td><b>校验职责</b></td><td>基础字段 + 简化规则的轻量校验</td><td>全量校验（含险种规则、数据库校验）</td></tr>
+          <tr><td><b>业务处理</b></td><td>发起申请、上传资料、查看进度、下载单证</td><td>受理、核保、审批、收付费、生效</td></tr>
+          <tr><td><b>单证处理</b></td><td>展示与下载</td><td>生成、打印、归档</td></tr>
+          <tr><td><b>异常处理</b></td><td>线上补充资料、修改银行信息</td><td><a class="xref" href="terms.html#problem">问题件</a>下发 / 核销、<a class="xref" href="terms.html#notice">通知书</a>回销、保全终止</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="split">
+      <h2>校验分工原则</h2>
+      <p>同一份人员清单会被校验两次：<a class="xref" href="terms.html#tqt">团险通</a>先做一次轻量校验，核心再做全量校验。分工依据是"这条规则需要什么信息才能判断"：</p>
+      <div class="compare">
+        <div>
+          <h4><span class="pill blue">交给团险通</span></h4>
+          <ul>
+            <li>基础字段格式：姓名、性别、出生日期、证件类型、证件号码、国籍、职业代码等</li>
+            <li>证件号码交叉校验：性别 / 出生日期 / 国籍与证件号的一致性</li>
+            <li>简化范围规则：如责任起止期 ≥ 上传当日、≤ 合同终止日</li>
+            <li><a class="xref" href="terms.html#inflight">在途状态</a>判断：被保险人是否正在办理其他保全</li>
+          </ul>
+        </div>
+        <div>
+          <h4><span class="pill orange">留给核心</span></h4>
+          <ul>
+            <li>需要险种规则的校验：如女性特疾险种不能为男性、社保补充医疗要求有医保</li>
+            <li>需要精确合同日期的校验：责任起期不得早于个单生效日等</li>
+            <li>需要访问数据库的校验：被保险人是否已承保、是否在理赔中、是否存在附属被保险人</li>
+            <li>长险模板字段：基本保险金额 / 保险费、个人税收居民身份等</li>
+          </ul>
+        </div>
+      </div>
+      <p style="font-size:13.5px;color:var(--ink-2)">完整规则矩阵（含每条规则的校验方标注）见<a href="rules.html">清单校验规则</a>页，可按校验方筛选。</p>
+    </div>
+
+    <div class="doc-block" id="switch">
+      <h2>校验开关设计</h2>
+      <p>规则表中带"<a class="xref" href="terms.html#tqt">团险通</a>是否校验 = 是"的规则，在核心侧开发为<b>开关控制</b>，用于灵活调整双系统校验边界：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>开关状态</th><th>核心校验行为</th></tr></thead>
+        <tbody>
+          <tr><td><b>开</b></td><td>对团险通提交的清单执行全量规则校验（含团险通已校验的规则）</td></tr>
+          <tr><td><b>关</b></td><td>仅校验团险通未校验的规则（信任前端结果，减少重复校验耗时）</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><b>为什么需要开关</b>：清单校验耗时主要来自规则逐条执行。开关关闭后核心跳过前端已完成的校验项，是后续校验效率优化（目标秒级响应）的重要抓手。</div>
+    </div>
+
+    <div class="doc-block" id="channel">
+      <h2>渠道标识与账号体系</h2>
+      <h3>申请渠道码值"17-团险通"</h3>
+      <p>团单保全申请的"申请渠道"新增码值 <b>17-<a class="xref" href="terms.html#tqt">团险通</a></b>。凡线上申请的保全，核心据此走差异化逻辑：</p>
+      <ul>
+        <li>人工核保 / 审批页面的核保结论下拉框<b>隐藏"退回受理"</b>选项（线上件不退回）；</li>
+        <li>保全申请工作池<b>不展示</b>团险通渠道的工作流（线上件不占用线下队列）；</li>
+        <li>隐藏相关页面的【<a class="xref" href="terms.html#problem">问题件</a>处理】按钮，问题件走线上专属流程；</li>
+        <li>收付费信息中删除"补退费领取人"及其必录校验。</li>
+      </ul>
+      <h3>团险通账号生成</h3>
+      <p>以保单<b>联系人手机号</b>作为登录账号，由核心在两个时机自动推送生成：团单签单成功时；AC-投保单位资料变更保全确认生效且联系人手机号发生变化时。</p>
+      <h3>"是否开通在线保全"开关</h3>
+      <p>新单录入与 AC 保全项中新增必填字段"是否开通在线保全"（Y / N）。若 AC 保全修改了该字段，<a class="xref" href="terms.html#endorsement-doc">批单</a>"法人信息"中需展示修改前后的值。</p>
+    </div>
+
+    <div class="doc-block" id="infra">
+      <h2>配套系统</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>系统</th><th>承担职责</th></tr></thead>
+        <tbody>
+          <tr><td><b>影像系统</b></td><td>存储与调阅<a class="xref" href="terms.html#image">影像件</a>；新增<a class="xref" href="terms.html#image">单证细类</a> 604（保全申请书）、615（核保补充资料<a class="xref" href="terms.html#problem">问题件</a>）；支持按单证号 / 影像类型 / 扫描号查询</td></tr>
+          <tr><td><b>打印服务</b></td><td><a class="xref" href="terms.html#endorsement-doc">批单</a>与各类<a class="xref" href="terms.html#notice">通知书</a>的自动生成与打印；自动打印件可在打印菜单人工补打，已自动打印件不可重复打印</td></tr>
+          <tr><td><b>银行第三方代付</b></td><td>保全退费的发盘与回盘；返回"支付失败"时触发转账不成功问题件流程</td></tr>
+          <tr><td><b>短信服务</b></td><td>五类通知短信，单次发送（失败不重发），发送对象为联系人 + 分佣比例最高的客户经理</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="roadmap">
+      <h2>后续优化方向</h2>
+      <p>试运行暴露三大核心问题，对应三条优化主线：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>现状痛点</th><th>优化方向</th></tr></thead>
+        <tbody>
+          <tr><td>核心校验效率不足：10 人清单最短 1 分 50 秒，200 人以上普遍超 10 分钟；前端被迫分段式流程，客户需二次登录确认</td><td>校验模块代码级效率升级；批处理改实时处理；取消分段流程实现一站式办理；符合条件的人工审批转自动审批</td></tr>
+          <tr><td>全流程页面直接使用 Vue 原生组件，未贴合品牌 VI 与操作习惯</td><td>全链路 UI/UX 升级：统一主色调、字体、组件、动效；重构导航与跳转逻辑</td></tr>
+          <tr><td>系统故障或通讯异常导致流程中断卡死，无自动重试与断点续办，只能被动响应</td><td>完善全链路异常监控平台，覆盖系统状态、通讯链路、业务节点，实时发现、主动预警</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="f-bottom" style="border-top:none">
+    <span><a class="back-home" href="index.html" style="color:#a89c8f">← 返回主界面</a></span>
+    <span>系统架构</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
