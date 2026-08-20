@@ -1,1 +1,212 @@
-__FROM_FILE__
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>团险通 · 在线保全知识库</title>
+<meta name="description" content="面向运营管理部保全工作人员的团险通系统功能与底层原理速览：名词解释、双系统架构、保全流程、校验规则、测试资料。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">内部学习资料</div>
+</header>
+
+<div class="page">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <h1>团险通 × 核心系统<br><span class="thin">在线保全功能一页通</span></h1>
+      <p class="lede">面向运营管理部保全工作人员：用一页讲清团险通在线保全的功能边界、双系统协作方式、十二个接口、清单校验规则与底层机制。点任意名词卡片，直达对应解释。</p>
+    </div>
+    <div class="hero-side">
+      <div class="meta-item"><b>适用对象</b>运营管理部 · 保全工作人员</div>
+      <div class="meta-item"><b>覆盖范围</b>新增 / 减少 / 更换被保险人在线保全（NI / ZT / IR）</div>
+      <div class="meta-item"><b>内容来源</b>需求规格说明书（在线保全业务说明）· 测试计划 · 接口详解</div>
+    </div>
+  </section>
+
+  <!-- 统计带 -->
+  <section class="stat-band">
+    <div class="stat-cell">
+      <div class="stat-num">52.30<span style="font-size:0.55em">%</span></div>
+      <div class="stat-label">试运行期间保全线上自助办理占比</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">1.78<span style="font-size:0.55em"> 小时</span></div>
+      <div class="stat-label">团险通业务件均办理时效</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">22<span style="font-size:0.55em"> 倍</span></div>
+      <div class="stat-label">较传统线下渠道保全时效缩短</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">12<span style="font-size:0.55em"> 个</span></div>
+      <div class="stat-label">核心系统为团险通新增的接口</div>
+    </div>
+  </section>
+
+  <!-- 名词卡片 -->
+  <section class="section">
+    <div class="section-head">
+      <span class="idx">01</span>
+      <h2>名词速查</h2>
+      <span class="sub">点击卡片进入独立解释页对应条目</span>
+    </div>
+    <div class="term-grid">
+      <a class="term-card" href="terms.html#insurance">
+        <span class="t-name">保险</span>
+        <span class="t-desc">风险转移的合同安排：投保人交费，保险人对约定事故承担赔付责任。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#group">
+        <span class="t-name">团体保险</span>
+        <span class="t-desc">以团体为投保单位的保险形态，一张保单覆盖若干被保险人。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#endorsement-svc">
+        <span class="t-name">保全</span>
+        <span class="t-desc">保单生效后的合同变更服务：增人、减人、换人、信息变更等。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#tqt">
+        <span class="t-name">团险通系统</span>
+        <span class="t-desc">面向投保单位经办人的前端自助服务平台，轻量校验、即时反馈。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#core">
+        <span class="t-name">核心系统</span>
+        <span class="t-desc">后台业务处理中枢：全量校验、收付费、批单生成、问题件管理。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#endorsement-doc">
+        <span class="t-name">批单</span>
+        <span class="t-desc">记录合同变更的法定凭证，与原保单具有同等法律效力。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#notice">
+        <span class="t-name">通知书</span>
+        <span class="t-desc">保全各阶段的告知文件，共七种类型，不具独立法律效力。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+      <a class="term-card" href="terms.html#problem">
+        <span class="t-name">问题件</span>
+        <span class="t-desc">流程中的待处理异常单元：核保补充资料、转账不成功等。</span>
+        <span class="t-go"><span>查看解释</span><span class="arrow">↗</span></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 快速入口 -->
+  <section class="section">
+    <div class="section-head">
+      <span class="idx">02</span>
+      <h2>深入阅读</h2>
+      <span class="sub">按主题进入完整内容</span>
+    </div>
+    <div class="entry-list">
+      <a class="entry-row" href="architecture.html">
+        <span class="e-idx">A</span>
+        <span class="e-title">系统架构</span>
+        <span class="e-desc">团险通与核心系统的职责分工、校验开关设计、影像与打印服务</span>
+        <span class="e-arrow">→</span>
+      </a>
+      <a class="entry-row" href="process.html">
+        <span class="e-idx">B</span>
+        <span class="e-title">保全流程与接口</span>
+        <span class="e-desc">从受理校验到批单下载的全流程图解，十二个接口逐个说明</span>
+        <span class="e-arrow">→</span>
+      </a>
+      <a class="entry-row" href="rules.html">
+        <span class="e-idx">C</span>
+        <span class="e-title">清单校验规则</span>
+        <span class="e-desc">通用 / 新增 / 替换 / 减少四套规则，可按校验方筛选</span>
+        <span class="e-arrow">→</span>
+      </a>
+      <a class="entry-row" href="principles.html">
+        <span class="e-idx">D</span>
+        <span class="e-title">底层原理</span>
+        <span class="e-desc">批单的法律根基、保单挂起、影像归档、打印与通知机制</span>
+        <span class="e-arrow">→</span>
+      </a>
+      <a class="entry-row" href="testing.html">
+        <span class="e-idx">E</span>
+        <span class="e-title">测试资料</span>
+        <span class="e-desc">测试计划各 sheet 与需求规格说明书的对应关系、缺陷记录</span>
+        <span class="e-arrow">→</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 一句话总览 -->
+  <section class="section">
+    <div class="section-head">
+      <span class="idx">03</span>
+      <h2>一分钟看懂协作模式</h2>
+    </div>
+    <div class="compare">
+      <div>
+        <h4><span class="pill blue">团险通 · 前端</span></h4>
+        <ul>
+          <li>面向投保单位经办人，多渠道登录</li>
+          <li>轻量校验 + 即时反馈，注重操作体验</li>
+          <li>调用核心 12 个接口完成业务提交与查询</li>
+          <li>接收批处理通知，展示进度、下载批单</li>
+        </ul>
+      </div>
+      <div>
+        <h4><span class="pill orange">核心系统 · 后台</span></h4>
+        <ul>
+          <li>面向内部运营人员，人工核保与审批</li>
+          <li>全量校验、收付费、保单数据管理</li>
+          <li>批单 / 通知书生成与打印</li>
+          <li>问题件管理与核销、批处理通知</li>
+        </ul>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink-2)">分工原则：基础字段（姓名、性别、证件类型、证件号码等）双系统都校验；需要险种规则、精确合同日期、访问数据库的复杂校验交核心；简化规则（如责任起止期范围）由团险通即时校验。</p>
+  </section>
+
+</div>
+
+<footer class="site-footer">
+  <div class="f-inner">
+    <div>
+      <h5>关于本站</h5>
+      <div class="f-logo">团险通 · 保全知识库</div>
+      <p class="f-desc">依据在线保全需求规格说明书、测试计划及接口详解整理，供运营管理部保全工作人员快速理解与查阅。内容已做通用化处理。</p>
+    </div>
+    <div>
+      <h5>基础</h5>
+      <a href="terms.html">名词解释</a>
+      <a href="architecture.html">系统架构</a>
+      <a href="process.html">保全流程与接口</a>
+    </div>
+    <div>
+      <h5>进阶</h5>
+      <a href="rules.html">清单校验规则</a>
+      <a href="principles.html">底层原理</a>
+      <a href="testing.html">测试资料</a>
+    </div>
+  </div>
+  <div class="f-bottom">
+    <span>团险通在线保全 · 内部学习资料</span>
+    <span>内容以现行需求规格说明书为准</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
