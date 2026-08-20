@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试资料 — 团险通 · 保全知识库</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">测试资料</div>
+</header>
+
+<div class="page">
+<div class="doc-layout">
+
+  <aside class="doc-side">
+    <div class="side-title">本页目录</div>
+    <a href="#mapping">Excel ↔ 规格书对照</a>
+    <a href="#stages">四大测试阶段</a>
+    <a href="#optimize">优化点复测</a>
+    <a href="#defects">缺陷记录</a>
+    <a href="#perf">性能与可靠性要点</a>
+  </aside>
+
+  <main class="doc-main">
+
+    <div class="doc-block" id="mapping">
+      <h2>测试 Excel 与规格书对照</h2>
+      <p>《<a class="xref" href="terms.html#tqt">团险通</a>测试计划（2024.08–2024.10）》共 12 个 sheet，与需求规格说明书的章节一一对应：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Excel Sheet</th><th>对应规格书章节</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>客户信息通用规则校验（14 条）</td><td>4.2.1 通用校验规则</td><td>基础字段校验，标注核心 / 团险通校验分工</td></tr>
+          <tr><td>新增被保险人清单规则（17 条）</td><td>4.2.1 / 4.2.2（NI）</td><td>增人专属规则：责任起期、主被保人、险种层校验等</td></tr>
+          <tr><td>替换被保险人清单规则（15 条）</td><td>4.2.1 / 4.2.3（IR）</td><td>替出人资格（理赔中 / 已理赔 / 附属被保人）+ 替入人规则</td></tr>
+          <tr><td>减少被保险人清单规则（12 条）</td><td>4.2.1（ZT）</td><td>责任止期规则、存在附属被保人先减等</td></tr>
+          <tr><td>核心清单校验页面反馈</td><td>4.4.1 清单校验批处理</td><td>校验结果页面反馈（空表，待补）</td></tr>
+          <tr><td>团险通模块测试</td><td>4.3 接口 / 4.5 短信</td><td>接口测试、清单上载规则测试、流程测试、短信模板测试</td></tr>
+          <tr><td><a class="xref" href="terms.html#core">核心系统</a>模块测试</td><td>4.1 核心改造</td><td>核心业务系统功能测试</td></tr>
+          <tr><td>优化点复测（34 项）</td><td>—</td><td>模板命名、格式、交互等优化项逐条复测</td></tr>
+          <tr><td>团险通 / 规则校验 / 核心测试截图</td><td>—</td><td>三类测试证据截图</td></tr>
+          <tr><td>缺陷记录及复测结果</td><td>—</td><td>缺陷编号、日期、详情、修复状态</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:13.5px;color:var(--ink-2)">四个规则 sheet 的完整内容已整理至<a href="rules.html">清单校验规则</a>页。</p>
+    </div>
+
+    <div class="doc-block" id="stages">
+      <h2>四大测试阶段</h2>
+      <div class="vflow">
+        <div class="vstep alt">
+          <div class="vs-title">一、接口测试 <span class="pill blue">4.3.1–4.3.12</span></div>
+          <div class="vs-body">逐个验证 12 个接口的必传校验、业务异常提示与处理逻辑。关键认识：申请确认后保单临时冻结（挂起）；保全是否受理接口将挂起作为前置校验，保障客户体验；转账不成功处理接口完成银行信息更新、<a class="xref" href="terms.html#problem">问题件</a>核销与进度回传。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">二、清单上载功能校验规则测试</div>
+          <div class="vs-body">批处理校验完成后，对通过 / 不通过的被保人分别通知；不通过列出原因，通过的生成补退费数据并合并合计金额。具体规则即四个规则 sheet。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">三、流程测试</div>
+          <div class="vs-body">端到端走通：受理校验 → 清单提交 → 校验通知 → 确认申请 → 核保（含二次核保补资料）→ 收付费（含转账失败回销）→ 生效 → <a class="xref" href="terms.html#endorsement-doc">批单</a>下载。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">四、短信模板测试</div>
+          <div class="vs-body">五类短信模板的发送条件、参数取值（团单号、保全项目名称、截止日期、人数、金额等）与接收人逻辑（联系人 + 分佣比例最高的客户经理）。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-block" id="optimize">
+      <h2>优化点复测</h2>
+      <p>测试期间沉淀 34 项优化点并逐项复测，典型项包括：</p>
+      <ul>
+        <li>模板命名统一："新增被保人清单模板"改为"增加被保人清单模板"（双系统一致）；</li>
+        <li>清单模板格式规范：字体、字号、表头加粗、字段表格样式统一；</li>
+        <li>其余涉及页面交互、提示语、字段展示等，均附截图佐证。</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="defects">
+      <h2>缺陷记录</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>编号</th><th>日期</th><th>缺陷详情（摘要）</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td class="num">2024-08-19</td><td>模板下载后无法打开；增人清单主被保人相关字段问题等</td><td><span class="pill yes">已修复</span></td></tr>
+          <tr><td class="num">2</td><td class="num">2024-08-26</td><td>核保补充资料<a class="xref" href="terms.html#problem">问题件</a>的回销影像查询无法查到客户上传的健康告知书等</td><td><span class="pill red">未修复</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn"><b>提示</b>：缺陷 2 涉及 <a class="xref" href="terms.html#image">615 单证</a>的影像回销链路，与核保补充资料问题件处理直接相关，使用相关功能时建议关注其修复进展。</div>
+    </div>
+
+    <div class="doc-block" id="perf">
+      <h2>性能与可靠性要点</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>指标</th><th>要求</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>接口响应时间</td><td class="num">≤ 5 秒</td><td>含文件下载 + 归档 + 状态更新</td></tr>
+          <tr><td>文件下载成功率</td><td class="num">≥ 99.9%</td><td><a class="xref" href="terms.html#endorsement-doc">批单</a>是法律文件，不能丢失</td></tr>
+          <tr><td>幂等命中率</td><td class="num">100%</td><td>重复请求绝不能导致重复处理</td></tr>
+          <tr><td>并发处理</td><td>支持批量保全场景</td><td>大企业一次保全可能涉及上千人</td></tr>
+          <tr><td>清单校验耗时（现状）</td><td class="num">10 人约 1 分 50 秒；200 人超 10 分钟</td><td>2026 优化目标：秒级响应</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="f-bottom" style="border-top:none">
+    <span><a class="back-home" href="index.html" style="color:#a89c8f">← 返回主界面</a></span>
+    <span>测试资料</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
