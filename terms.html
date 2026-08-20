@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名词解释 — 团险通 · 保全知识库</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">名词解释</div>
+</header>
+
+<div class="page">
+<div class="doc-layout">
+
+  <aside class="doc-side">
+    <div class="side-title">本页目录</div>
+    <a href="#insurance">保险</a>
+    <a href="#group">团体保险（团险）</a>
+    <a href="#endorsement-svc">保全</a>
+    <a href="#tqt">团险通系统</a>
+    <a href="#core">核心系统</a>
+    <a href="#endorsement-doc">批单</a>
+    <a href="#notice">通知书</a>
+    <a href="#problem">问题件</a>
+    <a href="#image">影像件</a>
+    <a href="#hang">保单挂起</a>
+    <a href="#settle">定期结算</a>
+    <a href="#inflight">在途状态</a>
+    <a href="#agent">经办人</a>
+  </aside>
+
+  <main class="doc-main">
+
+    <div class="doc-block" id="insurance">
+      <h2>保险</h2>
+      <div class="def-head"><span class="d-tag">基础概念</span></div>
+      <p>保险是一种风险转移的合同安排：投保人按约定交纳保险费，保险人对合同约定的可能发生的事故所造成的损失承担赔偿或给付责任。</p>
+      <div class="def-quote">"保险是指投保人根据合同约定，向保险人支付保险费，保险人对于合同约定的可能发生的事故因其发生所造成的财产损失承担赔偿保险金责任，或者当被保险人死亡、伤残、疾病或者达到合同约定的年龄、期限等条件时承担给付保险金责任的商业保险行为。"<span class="q-src">——《中华人民共和国保险法》第二条</span></div>
+      <p>在本知识库的语境中，所有业务都围绕一份"保险合同（保单）"展开：承保是合同的建立，保全是对合同的变更，理赔是合同的履行。</p>
+    </div>
+
+    <div class="doc-block" id="group">
+      <h2>团体保险（团险）</h2>
+      <div class="def-head"><span class="d-tag">业务形态</span></div>
+      <p>以团体（通常为企业、单位）作为投保人的保险形态。一张团体保单（团单）覆盖若干被保险人（通常是员工），由投保单位统一交费、统一办理保全。</p>
+      <ul>
+        <li><b>团单号</b>：团体保险合同号，是保全业务的主键。</li>
+        <li><b>投保单位</b>：即投保人，一般是企业；其联系人手机号是线上服务的身份标识。</li>
+        <li><b>被保险人</b>：实际被保障的员工；可附加其家属作为附属被保险人。</li>
+        <li><b>人员变动频繁</b>：员工入职离职导致增人、减人、换人成为团险最高频的保全场景——这正是团险通在线保全要解决的问题。</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="endorsement-svc">
+      <h2>保全</h2>
+      <div class="def-head"><span class="d-tag">核心业务</span></div>
+      <p>保全指保险合同生效后、终止前，对合同内容进行变更、维持或终止的一系列售后服务。任何保全变更都不能只在系统里改个数字，必须形成具有法律效力的书面凭证（批单）。</p>
+      <h3>团险通支持的三类在线保全项目</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>保全项代码</th><th>名称</th><th>说明</th><th>收付费</th></tr></thead>
+        <tbody>
+          <tr><td class="num">NI</td><td>新增被保险人</td><td>为保单增加被保险人（如新入职员工）</td><td>通常产生补收保费</td></tr>
+          <tr><td class="num">ZT</td><td>减少被保险人</td><td>从保单中减少被保险人（如离职员工）</td><td>通常产生退费</td></tr>
+          <tr><td class="num">IR</td><td>更换被保险人</td><td>减少旧人同时增加新人（岗位替换）</td><td>可能补退差额</td></tr>
+        </tbody>
+      </table></div>
+      <p>此外还有 AC-投保单位及资料变更（含"是否开通在线保全"开关）等线下/核心侧保全项，详见<a href="principles.html">底层原理</a>。</p>
+    </div>
+
+    <div class="doc-block" id="tqt">
+      <h2>团险通系统</h2>
+      <div class="def-head"><span class="d-tag">本知识库主角</span></div>
+      <p>团险通是面向<b>团体投保单位经办人</b>的线上自助服务平台（前端系统）。经办人登录后可自助查询保单与人员清单、办理人员增减替保全、下载交费通知书与批单。</p>
+      <ul>
+        <li><b>定位</b>：前端系统——处理用户交互，把操作转为请求发给后端；注重即时反馈。</li>
+        <li><b>校验分工</b>：对基础字段和简化规则做轻量校验，全量校验与业务处理交给核心系统。</li>
+        <li><b>账号</b>：以保单联系人手机号作为登录账号，签单或资料变更生效时由核心自动推送生成。</li>
+        <li><b>成效</b>：试运行期间线上自助办理占比达 52.30%，件均时效 1.78 小时，较线下缩短约 22 倍。</li>
+      </ul>
+      <p>详见<a href="architecture.html">系统架构</a>与<a href="process.html">保全流程与接口</a>。</p>
+    </div>
+
+    <div class="doc-block" id="core">
+      <h2>核心系统</h2>
+      <div class="def-head"><span class="d-tag">业务中枢</span></div>
+      <p>核心系统是保险公司后台业务处理中枢，负责处理业务逻辑、维护数据一致性。运营管理部保全工作人员的日常工作（保全审批、人工核保、问题件处理等）都在核心系统中完成。</p>
+      <ul>
+        <li><b>全量校验</b>：对团险通提交的人员清单进行二次（全量）校验。</li>
+        <li><b>收付费</b>：计算补退费、生成收付费信息、对接银行转账。</li>
+        <li><b>单证生成</b>：批单、各类通知书的生成与打印。</li>
+        <li><b>问题件管理</b>：核保补充资料问题件、转账不成功问题件的下发与核销。</li>
+        <li><b>批处理</b>：清单校验批处理、通知批处理（2 分钟一次，失败自动重试）。</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="endorsement-doc">
+      <h2>批单</h2>
+      <div class="def-head"><span class="d-tag">法律凭证</span><span class="pill blue">保全生效时产生</span></div>
+      <p>批单是记录保险合同变更内容的<b>法定书面凭证</b>，是保险合同的组成部分，与原保单具有同等法律效力。没有批单，保全变更在法律上就是不完整的。</p>
+      <div class="def-quote">"变更保险合同的，应当由保险人在保险单或者其他保险凭证上批注或者附贴批单，或者由投保人和保险人订立变更的书面协议。"<span class="q-src">——《中华人民共和国保险法》第二十条</span></div>
+      <h3>三大法律特征</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>特征</th><th>含义</th><th>对系统的要求</th></tr></thead>
+        <tbody>
+          <tr><td><b>补充性</b></td><td>依附于原合同存在，不能独立存在</td><td>批单必须关联保单号，数据表需外键指向保单</td></tr>
+          <tr><td><b>要式性</b></td><td>必须包含完整变更事项说明及公司签章</td><td>系统生成规范 PDF 影像件并加盖电子签章</td></tr>
+          <tr><td><b>优先性</b></td><td>与原合同冲突时以批单为准</td><td>理赔时须先查批单，按最新条款执行</td></tr>
+        </tbody>
+      </table></div>
+      <p>法律效力排序：<b>最新批单 &gt; 较早批单 &gt; 原保险单 &gt; 投保单</b>。批单由投保人留存，须永久归档。团险通保全确认生效时，核心自动调用打印服务生成批单，客户可在团险通下载。</p>
+    </div>
+
+    <div class="doc-block" id="notice">
+      <h2>通知书</h2>
+      <div class="def-head"><span class="d-tag">告知文件</span><span class="pill orange">流程各阶段均可产生</span></div>
+      <p>通知书是保全业务流程中的<b>告知性文件</b>，用于告知处理进度和结果，不具独立法律效力。一笔保全的生命周期中可能产生多份通知书：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>通知书类型</th><th>触发时机</th><th>内容示例</th></tr></thead>
+        <tbody>
+          <tr><td>受理通知书</td><td>保全申请确认后</td><td>"您的保全申请已受理，受理号：XXX"</td></tr>
+          <tr><td>核保通知书</td><td>核保环节</td><td>"需补充以下资料：健康告知书…"</td></tr>
+          <tr><td>收费通知书</td><td>核保通过、产生补收时</td><td>"需补缴保费 X 元，请于 X 日前缴纳"</td></tr>
+          <tr><td>退费通知书</td><td>减人 / 减保产生退费时</td><td>"将退费 X 元，转入原缴费账户"</td></tr>
+          <tr><td>生效通知书</td><td>保全生效后（随批单下发）</td><td>"保全已于 X 日生效，详见附件批单"</td></tr>
+          <tr><td>拒保通知书</td><td>核保拒绝时</td><td>"保全申请未通过核保，原因：…"</td></tr>
+          <tr><td>撤销通知书</td><td>保全撤销时</td><td>"保全申请已撤销"</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>与批单的关系</b>：批单是合同组成部分（法律凭证，给投保人留存）；通知书是阶段性告知（给投保人查看）。保全生效时两者同时生成、一并下发，因此下载功能合并为同一个"通知书批单下载接口"。</p>
+    </div>
+
+    <div class="doc-block" id="problem">
+      <h2>问题件</h2>
+      <div class="def-head"><span class="d-tag">异常处理单元</span></div>
+      <p>问题件是流程中需要人工或客户补充处理的异常单元，状态在"待处理 → 已处理"间流转。在线保全涉及两类：</p>
+      <ul>
+        <li><b>核保补充资料问题件</b>：人工核保 / 审批时下发，客户在团险通上传补充资料（如健康告知书），核心自动归档为 615 单证并置为"已处理"。</li>
+        <li><b>转账不成功问题件</b>：银行代付失败时自动生成，客户在团险通修改银行信息后，核心自动回销通知书、更新银行信息、置为"已处理"并重新付费。</li>
+      </ul>
+      <div class="note"><b>互斥规则</b>：同一保单存在未回复 / 待处理问题件时，不能重复下发问题件，也不能下核保结论或审批结论。</div>
+    </div>
+
+    <div class="doc-block" id="image">
+      <h2>影像件</h2>
+      <div class="def-head"><span class="d-tag">归档机制</span></div>
+      <p>影像件是业务过程中各类纸质 / 电子材料的数字化归档单元，按"单证细类"编码管理。在线保全涉及两个细类：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>单证细类</th><th>内容</th><th>扫描人</th></tr></thead>
+        <tbody>
+          <tr><td class="num">604</td><td>团险保全申请书影像件（变更申请书、健康告知书、清单名单图片等）</td><td>Auto-GrpChannel（系统自动）</td></tr>
+          <tr><td class="num">615</td><td>团险保全核保补充资料问题件</td><td>Auto-GrpChannel（系统自动）</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="hang">
+      <h2>保单挂起</h2>
+      <div class="def-head"><span class="d-tag">并发保护</span></div>
+      <p>保全申请确认成功后，核心会将该保单<b>临时冻结（挂起）</b>，防止同一保单被并发办理多笔保全导致数据冲突。保全结束后解挂。</p>
+      <ul>
+        <li>挂起是<b>前置校验</b>：客户在选择保全项目时（保全是否受理接口）即检查，避免填到一半才发现办不了。</li>
+        <li>被挂起时再申请会提示："保单号 XXX 被保全挂起，相关业务号码为 XXX，请先解挂！"</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="settle">
+      <h2>定期结算</h2>
+      <div class="def-head"><span class="d-tag">收付费机制</span></div>
+      <p>部分团单开通定期结算：保费不按整单一次收取，而是按周期（或按月）结算。结算金额为正时，核心生成定期结算交费通知书并通知团险通提醒交费。</p>
+      <ul>
+        <li>存在<b>未核销</b>的定期结算应收或月交应收时，保单暂不允许办理保全（保全是否受理接口拦截）。</li>
+        <li>交费截止日期取值：定期结算交费通知书 = 审批通过日期 + 30 自然日；保全交费通知书 = 生成通知书日期 + 30 自然日。</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="inflight">
+      <h2>在途状态</h2>
+      <div class="def-head"><span class="d-tag">校验规则用语</span></div>
+      <p>指被保险人已包含在同一保单另一笔<b>尚未办结</b>的保全申请名单中。在途状态包括：清单校验中、校验完成待提交 / 待确认等阶段。</p>
+      <p>规则：被保险人不能同时出现在两笔在途保全中，否则清单校验不通过，提示"被保险人正在办理其他保全业务"。该规则由团险通侧校验（即时反馈）。</p>
+    </div>
+
+    <div class="doc-block" id="agent">
+      <h2>经办人</h2>
+      <div class="def-head"><span class="d-tag">用户角色</span></div>
+      <p>团体投保单位中负责办理保险事务的联系人（通常是企业 HR 或行政人员），是团险通的主要使用者。其手机号即团险通登录账号，也是各项通知短信的接收人之一（另一接收人为承保地客户经理）。</p>
+      <p>当保单存在多个承保地客户经理时，短信发给<b>分佣比例最高</b>的一位；若并列则发给客户经理代码排序最靠前的一位。</p>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="f-bottom" style="border-top:none">
+    <span><a class="back-home" href="index.html" style="color:#a89c8f">← 返回主界面</a></span>
+    <span>名词解释 · 共 13 条</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
