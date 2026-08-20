@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>清单校验规则 — 团险通 · 保全知识库</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">校验规则</div>
+</header>
+
+<div class="page">
+<div class="doc-layout">
+
+  <aside class="doc-side">
+    <div class="side-title">本页目录</div>
+    <a href="#intro">分工总览</a>
+    <a href="#common">通用规则（14 条）</a>
+    <a href="#ni">新增被保险人（17 条）</a>
+    <a href="#ir">替换被保险人（15 条）</a>
+    <a href="#zt">减少被保险人（12 条）</a>
+    <a href="#template">清单模板说明</a>
+  </aside>
+
+  <main class="doc-main">
+
+    <div class="doc-block" id="intro">
+      <h2>分工总览</h2>
+      <p>以下规则整理自测试计划中的四个规则 sheet，与需求规格说明书 4.2 节对应。每条规则标注了校验方：<b>核心</b> / <b><a class="xref" href="terms.html#tqt">团险通</a></b> / 双系统均校验 / 均不校验。可用每组表格上方的筛选器按校验方过滤。</p>
+      <div class="note"><b>记法</b>：双系统校验 = 两端都执行（基础字段）；仅核心 = 需险种规则 / 数据库访问的复杂判断；仅团险通 = 简化范围、<a class="xref" href="terms.html#inflight">在途状态</a>等即时反馈规则。带"团险通校验 = 是"的规则在核心侧受开关控制（见<a href="architecture.html#switch">校验开关设计</a>）。</div>
+    </div>
+
+    <div class="doc-block" id="common">
+      <h2>通用客户信息规则</h2>
+      <p>适用于 NI / IR 清单中的客户信息校验，基础字段不分长短险均为必录。</p>
+      <div class="filter-bar" data-filter-group="tbl-common">
+        <button class="on" data-mode="all">全部</button>
+        <button data-mode="both">双系统校验</button>
+        <button data-mode="core">仅核心</button>
+        <button data-mode="tqt">仅团险通</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-common">
+        <thead><tr><th>#</th><th>字段 / 校验点</th><th>规则摘要</th><th>提示语</th><th>核心</th><th>团险通</th></tr></thead>
+        <tbody>
+          <tr data-core="是" data-tqt="是"><td class="num">1</td><td>姓名</td><td>只能含字母或汉字、"·"、空格；字母与汉字二选一；汉字 / 非汉字有最少长度限制</td><td>【姓名】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">2</td><td>性别</td><td>非空，仅"男 / 女"</td><td>【性别】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">3</td><td>出生日期</td><td>非空，日期格式（2022/01/01 或 2022-01-01）</td><td>【出生日期】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">4</td><td>证件类型</td><td>限身份证、户口簿（16 周岁以下）、出生医学证明（3 周岁以下）等法定类型</td><td>【证件类型】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">5</td><td>证件号码</td><td>按证件类型校验合法性（身份证 18 位、校验位等）</td><td>【证件号码】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">6</td><td>性别 × 证件号码</td><td>身份证 / 户口簿：倒数第 2 位奇男偶女</td><td>【性别】与【证件号码】不符</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">7</td><td>出生日期 × 证件号码</td><td>身份证 / 户口簿 / 港澳台居住证：出生日期与号码对应位一致</td><td>【出生日期】与【证件号码】不符</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">8</td><td>国籍 × 证件类型</td><td>身份证 / 户口簿 → 国籍中国；通行证 / 居住证 → 对应地区</td><td>【国籍】与【证件类型】不符</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">9</td><td>证件有效期起止期</td><td>模板含该字段才校验：非空 + 日期格式（含基本信息模板必录）</td><td>【证件有效期起期】或【止期】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">10</td><td>国籍</td><td>非空</td><td>【国籍】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">11</td><td>职业代码</td><td>非空且须为公司职业代码表中的码值（必录）</td><td>【职业代码】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">12</td><td>联系电话</td><td>模板含该字段则非空并校验格式（不含基本信息模板无此字段）</td><td>【联系电话】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">13</td><td>联系地址</td><td>含基本信息模板必录；模板无此字段则不校验</td><td>【联系地址】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">14</td><td>是否有医疗保障</td><td>非空，仅"是 / 否"</td><td>【是否有医疗保障】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="ni">
+      <h2>新增被保险人（NI）</h2>
+      <div class="filter-bar" data-filter-group="tbl-ni">
+        <button class="on" data-mode="all">全部</button>
+        <button data-mode="both">双系统校验</button>
+        <button data-mode="core">仅核心</button>
+        <button data-mode="tqt">仅团险通</button>
+        <button data-mode="none">均不校验</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-ni">
+        <thead><tr><th>#</th><th>校验点</th><th>规则摘要</th><th>提示语</th><th>核心</th><th>团险通</th></tr></thead>
+        <tbody>
+          <tr data-core="是" data-tqt="否"><td class="num">1</td><td>与投保人关系</td><td>模板含该字段则非空（含基本信息模板必录）</td><td>【与投保人关系】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">2</td><td>保险方案代码</td><td>非空，且为合同下已有方案之一</td><td>【保险方案代码】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">3</td><td>责任起期 · 格式</td><td>日期格式；<a class="xref" href="terms.html#tqt">团险通</a>不做非空校验（空则自动赋值）</td><td>【保险责任起期】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">4</td><td>责任起期 · 精确范围</td><td>不早于合同起期；新增附属被保人不早于其主被保人责任起期</td><td>【保险责任起期】不得早于 / 晚于某日</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="是"><td class="num">5</td><td>责任起期 · 简化范围</td><td>≥ 合同起期且 ≥ 提交次日；未填则默认提交日次日</td><td>【保险责任起期】不得小于 / 大于某日</td><td><span class="pill no">否</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">6</td><td>主被保人姓名</td><td>与主被保人关系不为"本人"时必填</td><td>【主被保险人姓名】不能为空</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">7</td><td>主被保人证件号码</td><td>同上，不为"本人"时必填</td><td>【主被保险人证件号码】不能为空</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">8</td><td>主被保人存在性</td><td>姓名 + 证件号在承保中（有效 / 满期 / 投保中）或本清单内可查</td><td>未查询到主被保险人信息</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">9</td><td>与主被保人关系</td><td>主被保人姓名 + 证件号有值时必填</td><td>【与主被保险人关系】不能为空</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">10</td><td>月薪</td><td>方案为月薪方案时必录；仅允许数值</td><td>【月薪】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="否" data-tqt="否"><td class="num">11</td><td>基本保险金额 / 保险费</td><td>长险必录，仅数字</td><td>【基本保险金额/保险费】格式错误</td><td><span class="pill no">否</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="否"><td class="num">12</td><td>个人税收居民身份</td><td>长险必录，限三类枚举值</td><td>【个人税收居民身份】格式错误</td><td><span class="pill no">否</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">13</td><td>重复新增</td><td>已在承保中（有效 / 满期 / 投保中）或清单内重复</td><td>被保险人已在承保中，无需新增</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="否"><td class="num">14</td><td>长险模板适用性</td><td>按方案险种判断清单模板是否使用正确（长险规则）</td><td>增加被保险人清单使用错误</td><td><span class="pill no">否</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">15</td><td>险种层 · 医疗保障</td><td>社保补充类医疗险种：【是否有医疗保障】必须为"是"</td><td>被保险人无医疗保险，不允许新增</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">16</td><td>险种层 · 性别限制</td><td>女性特疾 / 生育类险种不能为男性</td><td>被保险人性别不符合险种要求</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="是"><td class="num">17</td><td>在途冲突</td><td>不能同时在本保单其他在途保全的申请名单中</td><td>被保险人正在办理其他保全业务</td><td><span class="pill no">否</span></td><td><span class="pill yes">是</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="ir">
+      <h2>替换被保险人（IR）</h2>
+      <div class="filter-bar" data-filter-group="tbl-ir">
+        <button class="on" data-mode="all">全部</button>
+        <button data-mode="both">双系统校验</button>
+        <button data-mode="core">仅核心</button>
+        <button data-mode="tqt">仅团险通</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-ir">
+        <thead><tr><th>#</th><th>校验点</th><th>规则摘要</th><th>提示语</th><th>核心</th><th>团险通</th></tr></thead>
+        <tbody>
+          <tr data-core="是" data-tqt="是"><td class="num">1</td><td>替出被保人姓名</td><td>非空</td><td>【替出被保险人姓名】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">2</td><td>替出被保人证件号码</td><td>非空</td><td>【替出被保险人证件号码】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">3</td><td>替出人存在性</td><td>姓名 + 证件号须命中有效 / 满期被保人；清单内不重复替出（含已理赔终止的合并判断）</td><td>未查询到替出被保险人信息</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">4</td><td>替出人理赔中</td><td>正在理赔中的被保人不允许替换</td><td>被保险人**正在理赔中，不允许替换</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">5</td><td>替出人已理赔</td><td>有已结案且赔付 &gt; 0 记录的不允许替换</td><td>被保险人**已发生理赔，不允许替换</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">6</td><td>替出人有附属被保人</td><td>存在附属被保险人的不允许替换</td><td>存在附属被保险人，不允许替换</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">7</td><td>与投保人关系</td><td>模板含该字段则非空（含基本信息模板必录）</td><td>【与投保人关系】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">8</td><td>责任起期 · 格式</td><td>日期格式</td><td>【保险责任起期】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">9</td><td>责任起期 · 精确范围</td><td>不早于替出被保人个单生效日（预约增人则不早于其责任起期）；不晚于替出被保人责任止期</td><td>【保险责任起期】不得早于 / 晚于某日</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="是"><td class="num">10</td><td>责任起期 · 简化范围</td><td>同增人：≥ 合同起期且 ≥ 提交次日</td><td>【保险责任起期】不得早于 / 晚于某日</td><td><span class="pill no">否</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">11</td><td>方案适用性</td><td>费率型保费（折扣 / 约定 / 期望费率）或月薪倍数 / 非固定保额方案不允许替换</td><td>对应保险方案不允许替换被保险人</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">12</td><td>替入人重复</td><td>姓名 + 证件号已承保（有效 / 满期 / 投保中）或清单内重复替入</td><td>被保险人**已在承保中，无需替入</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">13</td><td>险种层 · 医疗保障</td><td>社保补充类医疗险种要求有医疗保障</td><td>被保险人**无医疗保障，不允许替换</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">14</td><td>险种层 · 性别限制</td><td>女性特疾 / 生育类险种不能为男性</td><td>被保险人**性别不符合险种要求</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="是"><td class="num">15</td><td>在途冲突</td><td>同增人：不能在其他在途保全名单中</td><td>被保险人正在办理其他保全业务</td><td><span class="pill no">否</span></td><td><span class="pill yes">是</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="zt">
+      <h2>减少被保险人（ZT）</h2>
+      <p>减人清单的关键字段是<b>保险责任止期</b>；线上"是否全额退费"默认处理为"否"。</p>
+      <div class="filter-bar" data-filter-group="tbl-zt">
+        <button class="on" data-mode="all">全部</button>
+        <button data-mode="both">双系统校验</button>
+        <button data-mode="core">仅核心</button>
+        <button data-mode="tqt">仅团险通</button>
+        <button data-mode="none">均不校验</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-zt">
+        <thead><tr><th>#</th><th>校验点</th><th>规则摘要</th><th>提示语</th><th>核心</th><th>团险通</th></tr></thead>
+        <tbody>
+          <tr data-core="是" data-tqt="是"><td class="num">1</td><td>姓名</td><td>非空</td><td>【姓名】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">2</td><td>证件号码</td><td>非空</td><td>【证件号码】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="是"><td class="num">3</td><td>责任止期 · 格式</td><td>日期格式</td><td>【保险责任止期】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">4</td><td>责任止期 · 精确范围</td><td>未理赔：不早于个单生效日（预约增人不早于其责任起期）；已理赔：不早于最大事故日期</td><td>【保险责任止期】不得早于 / 晚于某日</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="是"><td class="num">5</td><td>责任止期 · 简化范围</td><td>上传当日 ≤ 责任止期 ≤ 合同终止日</td><td>【保险责任止期】不得早于 / 晚于某日</td><td><span class="pill no">否</span></td><td><span class="pill yes">是</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">6</td><td>被保人存在性</td><td>姓名 + 证件号须命中有效 / 满期被保人；清单内不重复减人（含已理赔终止的合并判断）</td><td>未查询到被保险人信息</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">7</td><td>理赔中</td><td>正在理赔中的被保人不允许减少</td><td>被保险人正在理赔中，不允许减少</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">8</td><td>已理赔终止</td><td>个单下险种全部非满期终止的（已合并至"未查询到被保险人信息"）</td><td>名下保单已理赔终止，不允许减少</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">9</td><td>存在附属被保人</td><td>须先减少附属被保险人</td><td>存在附属被保险人，请先减少附属被保险人</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="是" data-tqt="否"><td class="num">10</td><td>是否全额退费</td><td>仅"是 / 否"；线下校验项，线上默认"否"</td><td>【是否全额退费】格式错误</td><td><span class="pill yes">是</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="否"><td class="num">11</td><td>虚拟被保人</td><td>规则已删除（虚拟被保险人不允许变更）</td><td>—</td><td><span class="pill no">否</span></td><td><span class="pill no">否</span></td></tr>
+          <tr data-core="否" data-tqt="是"><td class="num">12</td><td>在途冲突</td><td>不能在其他在途保全名单中</td><td>被保险人正在办理其他保全业务</td><td><span class="pill no">否</span></td><td><span class="pill yes">是</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="template">
+      <h2>清单模板说明</h2>
+      <ul>
+        <li><b>NI 增人</b>：不再使用原通用模板，新增"新增被保险人清单-短期险"与"新增被保险人清单-短期险（含基本信息）"两个模板；保单下存在长险时页面保持原模板。</li>
+        <li><b>IR 换人</b>：新增"更换被保险人模板"与"更换被保险人模板（含基本信息）"；短险模板删除"与主被保人关系 / 主被保人姓名 / 证件号码"三字段——替出人若为附属被保人，系统自动处理：替入人默认附属、主被保人及关系均继承替出人。</li>
+        <li><b>ZT 减人</b>：关键字段为"保险责任止期"。</li>
+      </ul>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="f-bottom" style="border-top:none">
+    <span><a class="back-home" href="index.html" style="color:#a89c8f">← 返回主界面</a></span>
+    <span>清单校验规则 · 58 条</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
