@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>保全流程与接口 — 团险通 · 保全知识库</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">流程与接口</div>
+</header>
+
+<div class="page">
+<div class="doc-layout">
+
+  <aside class="doc-side">
+    <div class="side-title">本页目录</div>
+    <a href="#flow">保全全流程图解</a>
+    <a href="#apis">十二个接口</a>
+    <a href="#api-chain">接口调用链</a>
+    <a href="#batch">批处理机制</a>
+    <a href="#status">业务进度状态码</a>
+    <a href="#sms">短信通知</a>
+  </aside>
+
+  <main class="doc-main">
+
+    <div class="doc-block" id="flow">
+      <h2>保全全流程图解</h2>
+      <p>一笔在线保全从发起到办结的完整路径，标注每个环节调用的接口（编号对应需求规格说明书 4.3 节）：</p>
+      <div class="vflow">
+        <div class="vstep">
+          <div class="vs-title">选择保单与保全项目 <span class="pill blue"><a class="xref" href="terms.html#tqt">团险通</a></span></div>
+          <div class="vs-body"><a class="xref" href="terms.html#agent">经办人</a>选定团单与 NI / ZT / IR 保全项 → 调用 <b>保全是否受理接口（4.3.5）</b> 做前置校验：挂起状态、未核销应收、保单终止、回执签收、生效日期、无名单保单、建工险限制等。不通过则即时提示，客户体验前置保障。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">下载模板、填写并上传人员清单 <span class="pill blue">团险通</span></div>
+          <div class="vs-body">团险通先做轻量校验，再调用 <b>被保险人清单提交接口（4.3.6）</b> 将清单传入核心。核心落库后由清单校验批处理执行全量校验。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">查看校验结果 <span class="pill blue">团险通</span></div>
+          <div class="vs-body">校验完成后，核心通过通知批处理回传：通过与不通过的被保人名单、不通过原因；对通过者生成补退费明细与合计金额、收费账户信息、客户经理手机号。业务进度："校验完成待确认"。</div>
+        </div>
+        <div class="vstep alt">
+          <div class="vs-title">点击"确认申请" <span class="pill blue">团险通</span></div>
+          <div class="vs-body">调用 <b>保全申请确认接口（4.3.7）</b>。核心复核受理条件 → <b><a class="xref" href="terms.html#hang">保单挂起</a></b> → 生成保全受理工作流并自动申请确认 → 申请书 / 告知书 / 名单图片归档为 604 <a class="xref" href="terms.html#image">影像件</a> → 对校验通过人员生成收付费信息。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">核保与审批 <span class="pill orange">核心 / 运营</span></div>
+          <div class="vs-body">自动核保，不通过转人工。需补充资料时运营人员下发<b>核保补充资料<a class="xref" href="terms.html#problem">问题件</a></b>，客户在团险通上传资料（<b>核保资料补充接口 4.3.9</b>），核心归档 615 单证并自动核销问题件，业务进度"3-人工审核中"。核保拒绝 / 审批拒绝 / 撤销 / 强制终止 → 业务进度"9-保全终止"。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">收付费 <span class="pill orange">核心</span></div>
+          <div class="vs-body">审批通过后：收费件 → 生成交费<a class="xref" href="terms.html#notice">通知书</a>（自动打印）、业务进度"4-待交费"、短信提醒；退费件 → 银行代付，失败则生成转账不成功通知书与问题件，客户在团险通修改银行信息后调用 <b>转账不成功处理接口（4.3.8）</b> 完成回销与重新付费。</div>
+        </div>
+        <div class="vstep alt">
+          <div class="vs-title">保全生效，<a class="xref" href="terms.html#endorsement-doc">批单</a>生成 <span class="pill orange">核心</span></div>
+          <div class="vs-body">收付费完成 → 确认生效（业务进度"8-确认生效"）→ 核心自动调用打印服务生成<b>批单</b> → 短信通知经办人与客户经理。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">客户下载批单 / 通知书 <span class="pill blue">团险通</span></div>
+          <div class="vs-body">调用 <b>通知书批单下载接口（4.3.11）</b>：已打印则返回文件链接；未打印且当日调用打印次数 &lt; 2 则自动触发打印。批单未生效不可下载。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">保单解挂，流程结束 <span class="pill orange">核心</span></div>
+          <div class="vs-body">保全办结后解除挂起，保单恢复可办理状态。</div>
+        </div>
+      </div>
+      <div class="note warn"><b>异常分支</b>：申请确认前客户可在团险通删除保全（<b>保全删除接口 4.3.10</b>），核心删除清单与补退费数据；已申请确认的保全不允许删除，只能由核心侧撤销 / 终止。</div>
+    </div>
+
+    <div class="doc-block" id="apis">
+      <h2>十二个接口</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>编号</th><th>接口</th><th>方向</th><th>一句话说明</th></tr></thead>
+        <tbody>
+          <tr><td class="num">4.3.1</td><td>保单列表查询</td><td><a class="xref" href="terms.html#tqt">团险通</a> → 核心</td><td>按登录手机号查询其作为联系人的全部团单（支持按保单号 / 状态过滤）</td></tr>
+          <tr><td class="num">4.3.2</td><td>保单详情查询</td><td>团险通 → 核心</td><td>返回基本信息、投保单位、银行账户、纳税人信息</td></tr>
+          <tr><td class="num">4.3.3</td><td>保险方案查询</td><td>团险通 → 核心</td><td>返回方案及险种明细（免赔、赔付比例、保额、保费等）</td></tr>
+          <tr><td class="num">4.3.4</td><td>被保人清单查询</td><td>团险通 → 核心</td><td>分页查询保单被保人名单及状态</td></tr>
+          <tr><td class="num">4.3.5</td><td><b>保全是否受理</b></td><td>团险通 → 核心</td><td>入口闸门：校验挂起、未核销应收、终止、回执、生效日、无名单、建工险等</td></tr>
+          <tr><td class="num">4.3.6</td><td>被保险人清单提交</td><td>团险通 → 核心</td><td>提交增 / 减 / 换人清单，核心落库并触发批处理校验</td></tr>
+          <tr><td class="num">4.3.7</td><td><b>保全申请确认</b></td><td>团险通 → 核心</td><td>发令枪：复核受理 → 挂起 → 生成工作流 → 影像归档 → 生成收付费</td></tr>
+          <tr><td class="num">4.3.8</td><td>转账不成功处理</td><td>团险通 → 核心</td><td>更新银行信息、回销<a class="xref" href="terms.html#notice">通知书</a>、<a class="xref" href="terms.html#problem">问题件</a>置已处理、反馈业务进度</td></tr>
+          <tr><td class="num">4.3.9</td><td>核保资料补充</td><td>团险通 → 核心</td><td>上传健康告知书等，归档 615 单证，问题件置已处理</td></tr>
+          <tr><td class="num">4.3.10</td><td>保全删除</td><td>团险通 → 核心</td><td>删除未确认的保全数据（清单 + 补退费）</td></tr>
+          <tr><td class="num">4.3.11</td><td><b>通知书<a class="xref" href="terms.html#endorsement-doc">批单</a>下载</b></td><td>团险通 → 核心</td><td>终点交付：下载交费 / 转账不成功通知书、批单、<a class="xref" href="terms.html#settle">定期结算</a> / 月交通知书</td></tr>
+          <tr><td class="num">4.3.12</td><td>清单校验字段查询</td><td>团险通 → 核心</td><td>返回生效 / 终止日期、是否月交、方案是否月薪 / 费率型，支撑前端校验</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><b>共性规则</b>：所有接口均要求手机号必传，且与核心留存的投保单位联系人手机号一致，否则返回业务异常"保单投保单位联系人手机号与登录手机号不匹配"——这是线上身份认证的核心机制。</div>
+    </div>
+
+    <div class="doc-block" id="api-chain">
+      <h2>接口调用链</h2>
+      <div class="flow">
+        <div class="flow-lane">
+          <div class="lane-label">申请阶段</div>
+          <div class="lane-body">
+            <span class="fnode api"><b>4.3.5</b> 能不能做？</span><span class="farrow">→</span>
+            <span class="fnode api"><b>4.3.6</b> 数据给你</span><span class="farrow">→</span>
+            <span class="fnode api"><b>4.3.7</b> 正式开始</span>
+          </div>
+        </div>
+        <div class="flow-lane">
+          <div class="lane-label">处理阶段</div>
+          <div class="lane-body">
+            <span class="fnode">核心：核保 / 审批 / 收付费</span><span class="farrow">→</span>
+            <span class="fnode api warn" style="border-style:dashed"><b>4.3.9</b> 补资料（可选）</span>
+            <span class="fnode api warn" style="border-style:dashed"><b>4.3.8</b> 转账失败（异常）</span>
+          </div>
+        </div>
+        <div class="flow-lane">
+          <div class="lane-label">交付阶段</div>
+          <div class="lane-body">
+            <span class="fnode sys">确认生效 · <a class="xref" href="terms.html#endorsement-doc">批单</a>生成</span><span class="farrow">→</span>
+            <span class="fnode api"><b>4.3.11</b> 做完了，给客户</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:13.5px;color:var(--ink-2)">查询类接口（4.3.1–4.3.4、4.3.12）贯穿全程，支撑页面展示与前端校验；保全删除（4.3.10）仅在确认前可用。</p>
+    </div>
+
+    <div class="doc-block" id="batch">
+      <h2>批处理机制</h2>
+      <p>核心新增两个批处理，运行频次均为 <b>2 分钟一次</b>；处理或通知失败、接口超时未返回的，下一次运行继续处理，<b>直至成功</b>：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>批处理</th><th>职责</th></tr></thead>
+        <tbody>
+          <tr><td><b>清单校验批处理</b></td><td>对<a class="xref" href="terms.html#tqt">团险通</a>上传的人员清单执行全量校验（规则见 4.2 / 本库规则页）</td></tr>
+          <tr><td><b>通知批处理</b></td><td>五类通知：清单校验完成、核保补充资料<a class="xref" href="terms.html#problem">问题件</a>、转账不成功、<a class="xref" href="terms.html#settle">定期结算</a> / 月交、保全状态变更</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn"><b>已知短板</b>：批处理回传导致前端流程分段（客户需二次登录确认）。2026 优化方向为改实时处理、取消分段。详见<a href="architecture.html#roadmap">系统架构 · 后续优化方向</a>。</div>
+    </div>
+
+    <div class="doc-block" id="status">
+      <h2>业务进度状态码</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>进度码</th><th>含义</th><th>触发条件</th></tr></thead>
+        <tbody>
+          <tr><td class="num">—</td><td>校验完成待确认</td><td>清单校验批处理完成并通知</td></tr>
+          <tr><td class="num">3</td><td>人工审核中</td><td>申请确认后进入人工核保 / 审批；或补充资料上传完成</td></tr>
+          <tr><td class="num">4</td><td>待交费</td><td>审批通过、生成待收费数据、财务未返回收费成功（附交费截止日期）</td></tr>
+          <tr><td class="num">6</td><td>付费中</td><td>确认生效且财务付费发盘但未成功</td></tr>
+          <tr><td class="num">5</td><td>付费成功</td><td>财务返回付费成功</td></tr>
+          <tr><td class="num">8</td><td>确认生效</td><td>保全工作流确认生效</td></tr>
+          <tr><td class="num">9</td><td>保全终止</td><td>核保拒绝 / 审批拒绝 / 核心撤销 / 强制终止</td></tr>
+          <tr><td class="num">—</td><td><a class="xref" href="terms.html#problem">问题件</a>待处理</td><td>下发核保补充资料问题件 / 转账不成功问题件</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="doc-block" id="sms">
+      <h2>短信通知</h2>
+      <p>五类短信均为<b>单次发送</b>（失败不重发），接收人为团单联系人手机号 + 承保地客户经理手机号（多位客户经理取分佣比例最高者，并列取代码最靠前）：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>短信</th><th>发送条件</th></tr></thead>
+        <tbody>
+          <tr><td>核保补充资料<a class="xref" href="terms.html#problem">问题件</a>待处理</td><td><a class="xref" href="terms.html#tqt">团险通</a>渠道保全下发核保补充资料问题件时</td></tr>
+          <tr><td>转账不成功问题件待处理</td><td>付费转账不成功下发问题件时</td></tr>
+          <tr><td>保全交费提醒</td><td>保全产生收费且审批通过时（含交费截止日期）</td></tr>
+          <tr><td><a class="xref" href="terms.html#settle">定期结算</a> / 月交交费提醒</td><td>定期结算审批通过且金额为正；或月交抽档成功且金额为正</td></tr>
+          <tr><td>保全案件生效通知</td><td>保全状态更新为"确认生效"时（含人数与涉及费用）</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="f-bottom" style="border-top:none">
+    <span><a class="back-home" href="index.html" style="color:#a89c8f">← 返回主界面</a></span>
+    <span>保全流程与接口</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
