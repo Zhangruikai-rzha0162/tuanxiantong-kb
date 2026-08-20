@@ -93,7 +93,7 @@
 
     <div class="doc-block" id="archive">
       <h2>影像件归档</h2>
-      <p>申请确认时，核心自动将以下材料处理为该保全的<a class="xref" href="terms.html#image">影像件</a>（<a class="xref" href="terms.html#image">单证细类</a> <b>604</b>，扫描人 <b>Auto-GrpChannel</b>，扫描机构 86）：<a class="xref" href="terms.html#group">团体保险</a>合同变更申请书、健康告知书、清单校验通过 / 不通过名单图片等。核保补充资料上传后归档为 <b>615</b> 单证并自动生成单证号与扫描批次号。</p>
+      <p>申请确认时，核心自动将以下材料处理为该保全的<a class="xref" href="terms.html#image">影像件</a>（<a class="xref" href="terms.html#image">单证细类</a> <b>604</b>，扫描人 <b>系统自动账号（AUTO）</b>，扫描机构 86）：<a class="xref" href="terms.html#group">团体保险</a>合同变更申请书、健康告知书、清单校验通过 / 不通过名单图片等。核保补充资料上传后归档为 <b>615</b> 单证并自动生成单证号与扫描批次号。</p>
       <pre class="code"><span class="c"># 影像存储组织方式（按 保单号 / 保全受理号 分层）</span>
 /policy/{团单号}/endorsement/{保全受理号}/
   ├── application/    <span class="c"># 申请阶段：客户上传清单、健康告知书</span>
@@ -146,10 +146,10 @@
         </div>
         <div class="vstep alt">
           <div class="vs-title">自动核销</div>
-          <div class="vs-body">问题件状态 →"已处理"，回复人员 Auto-GrpChannel，回复日期取团险通提交成功之日；转账不成功件处理后保全可重新付费，并反馈业务进度（确认生效 / 付费中）给团险通。</div>
+          <div class="vs-body">问题件状态 →"已处理"，回复人员为系统自动账号（AUTO），回复日期取团险通提交成功之日；转账不成功件处理后保全可重新付费，并反馈业务进度（确认生效 / 付费中）给团险通。</div>
         </div>
       </div>
-      <p>问题件管理中，核保补充资料问题件的扫描人员默认 Auto-GrpChannel；转账不成功问题件下发人员默认为 AUTO；线上处理的转账不成功件无<a class="xref" href="terms.html#image">影像件</a>，详情页【通知书回销影像查询】按钮置灰。</p>
+      <p>问题件管理中，核保补充资料问题件的扫描人员默认为系统自动账号；转账不成功问题件下发人员默认为 AUTO；线上处理的转账不成功件无<a class="xref" href="terms.html#image">影像件</a>，详情页【通知书回销影像查询】按钮置灰。</p>
     </div>
 
   </main>

@@ -30,7 +30,7 @@
     <a href="#mapping">Excel ↔ 规格书对照</a>
     <a href="#stages">四大测试阶段</a>
     <a href="#optimize">优化点复测</a>
-    <a href="#defects">缺陷记录</a>
+    <a href="#defects">缺陷记录（示例）</a>
     <a href="#perf">性能与可靠性要点</a>
   </aside>
 
@@ -90,7 +90,8 @@
     </div>
 
     <div class="doc-block" id="defects">
-      <h2>缺陷记录</h2>
+      <h2>缺陷记录（示例）</h2>
+      <div class="note"><b>说明</b>：本表为<b>示例</b>，仅摘录测试过程中的两条代表性记录，用于说明缺陷登记的格式与处理方式，并非完整清单。</div>
       <div class="tbl-wrap"><table class="tbl">
         <thead><tr><th>编号</th><th>日期</th><th>缺陷详情（摘要）</th><th>状态</th></tr></thead>
         <tbody>
@@ -98,6 +99,7 @@
           <tr><td class="num">2</td><td class="num">2024-08-26</td><td>核保补充资料<a class="xref" href="terms.html#problem">问题件</a>的回销影像查询无法查到客户上传的健康告知书等</td><td><span class="pill red">未修复</span></td></tr>
         </tbody>
       </table></div>
+      <div class="note"><b>"修复"与"优化"的区别</b>：<b>缺陷修复</b>针对的是功能与需求规格不符、影响正常使用的错误——状态"已修复"表示开发已修改且复测通过，"未修复"表示待开发处理、复测通过前不可关闭；<b>优化点</b>指功能本身可用、但在体验、规范性、提示文案等方面可提升的改进建议，不算错误，不进入缺陷流程，而是单独列入优化清单逐项复测（见上节"优化点复测"）。简单记：缺陷是"做错了必须改"，优化是"没错但可以更好"。</div>
       <div class="note warn"><b>提示</b>：缺陷 2 涉及 <a class="xref" href="terms.html#image">615 单证</a>的影像回销链路，与核保补充资料问题件处理直接相关，使用相关功能时建议关注其修复进展。</div>
     </div>
 
