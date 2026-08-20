@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>底层原理 — 团险通 · 保全知识库</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="mark">团</span>团险通 · 保全知识库</a>
+  <nav>
+    <a href="index.html">主界面</a>
+    <a href="terms.html">名词解释</a>
+    <a href="architecture.html">系统架构</a>
+    <a href="process.html">保全流程与接口</a>
+    <a href="rules.html">清单校验规则</a>
+    <a href="principles.html">底层原理</a>
+    <a href="testing.html">测试资料</a>
+  </nav>
+  <div class="tag">底层原理</div>
+</header>
+
+<div class="page">
+<div class="doc-layout">
+
+  <aside class="doc-side">
+    <div class="side-title">本页目录</div>
+    <a href="#legal">批单的法律根基</a>
+    <a href="#doc-vs">批单 vs 通知书</a>
+    <a href="#hang-p">保单挂起机制</a>
+    <a href="#idempotent">幂等与重试</a>
+    <a href="#archive">影像件归档</a>
+    <a href="#print">打印机制</a>
+    <a href="#deadline">交费截止日期取值</a>
+    <a href="#problem-p">问题件闭环</a>
+  </aside>
+
+  <main class="doc-main">
+
+    <div class="doc-block" id="legal">
+      <h2>批单的法律根基</h2>
+      <div class="note legal"><b>《保险法》第二十条</b>：投保人和保险人可以协商变更合同内容。变更保险合同的，应当由保险人在保险单或者其他保险凭证上批注或者附贴<a class="xref" href="terms.html#endorsement-doc">批单</a>，或者由投保人和保险人订立变更的书面协议。</div>
+      <p>这条法律决定了系统设计的底线：<b>任何保全变更都必须产出一份书面、具有法律效力的文件</b>——批单。它不是可有可无的通知，而是合同的法律组成部分。</p>
+      <h3>法律效力优先级</h3>
+      <pre class="code">法律效力排序（从高到低）：
+
+  最新的批单  &gt;  较早的批单  &gt;  原保险单  &gt;  投保单
+
+举例：
+  原保单：保额 100 万
+  第 1 次批单：改为 80 万
+  第 2 次批单：改为 120 万
+  <span class="c">→ 当前有效保额 = 120 万（以最新批单为准）</span></pre>
+      <p>因此批单必须永久归档、作为合同附件；理赔时系统须先查批单，按批单后的最新条款执行。这也是"批单是法律文件，不能丢失"这一性能与可靠性要求的来源（下载成功率 ≥ 99.9%）。</p>
+    </div>
+
+    <div class="doc-block" id="doc-vs">
+      <h2>批单 vs 通知书</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>维度</th><th>批单</th><th>通知书</th></tr></thead>
+        <tbody>
+          <tr><td>法律性质</td><td>保险合同的法定组成部分</td><td>业务流程中的告知文件</td></tr>
+          <tr><td>法律效力</td><td>与原保单同等</td><td>不具独立法律效力</td></tr>
+          <tr><td>产生时机</td><td>仅保全生效时</td><td>保全各阶段均可产生</td></tr>
+          <tr><td>数量关系</td><td>一笔保全最多一份</td><td>一笔保全可能多份</td></tr>
+          <tr><td>归档要求</td><td>永久归档，合同附件</td><td>一般归档，期限较短</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>为什么下载走同一接口（4.3.11）</b>：<a class="xref" href="terms.html#endorsement-doc">批单</a>与生效<a class="xref" href="terms.html#notice">通知书</a>经常同时产生、共享同一下发通道（生成 PDF → 影像归档 → 推送下载），合并为一个出口可减少交互次数、避免两套通道的不一致风险。</p>
+    </div>
+
+    <div class="doc-block" id="hang-p">
+      <h2>保单挂起机制</h2>
+      <p>保全确认成功后保单被挂起（临时冻结），防止并发保全造成数据冲突。设计要点：</p>
+      <ul>
+        <li><b>前置检查</b>：保全是否受理接口（4.3.5）把"是否挂起"作为前置校验，优先于填报流程，客户在选择保全项时即可获知，避免无效填写。</li>
+        <li><b>双重防线</b>：申请确认接口（4.3.7）再次检查挂起状态，防止校验后他人抢先占用。</li>
+        <li><b>提示可定位</b>：报错信息携带相关业务号码（保全受理号），便于排查。</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="idempotent">
+      <h2>幂等与失败重试</h2>
+      <p>跨系统调用必然面对"处理成功但响应超时"的场景，本系统用两条机制兜底：</p>
+      <ul>
+        <li><b>接口幂等</b>：重复请求（同一业务键）不重复处理，直接返回上次结果——避免重复归档、重复通知客户。</li>
+        <li><b>批处理重试</b>：清单校验批处理与通知批处理 2 分钟一次，失败或超时的任务下轮继续处理，<b>直至成功</b>。</li>
+      </ul>
+      <div class="note warn"><b>现状与方向</b>：<a class="xref" href="terms.html#tqt">团险通</a>自身故障或与核心通讯异常仍可能导致流程中断卡死，无自动重试与断点续办能力——这正是 2026 年开发需求中"完善全链路异常监控"要解决的问题。</div>
+    </div>
+
+    <div class="doc-block" id="archive">
+      <h2>影像件归档</h2>
+      <p>申请确认时，核心自动将以下材料处理为该保全的<a class="xref" href="terms.html#image">影像件</a>（<a class="xref" href="terms.html#image">单证细类</a> <b>604</b>，扫描人 <b>Auto-GrpChannel</b>，扫描机构 86）：<a class="xref" href="terms.html#group">团体保险</a>合同变更申请书、健康告知书、清单校验通过 / 不通过名单图片等。核保补充资料上传后归档为 <b>615</b> 单证并自动生成单证号与扫描批次号。</p>
+      <pre class="code"><span class="c"># 影像存储组织方式（按 保单号 / 保全受理号 分层）</span>
+/policy/{团单号}/endorsement/{保全受理号}/
+  ├── application/    <span class="c"># 申请阶段：客户上传清单、健康告知书</span>
+  ├── underwriting/   <span class="c"># 核保阶段：补充资料（615）</span>
+  └── result/         <span class="c"># 结果阶段：批单 PDF、通知书 PDF</span></pre>
+      <p>人工核保与审批页面的【保全影像查询】可查看保全下所有影像件（604 / 615），支持按单证号、影像类型、扫描号查询。</p>
+    </div>
+
+    <div class="doc-block" id="print">
+      <h2>打印机制</h2>
+      <p>四类单证在特定业务节点由核心<b>自动调用打印服务</b>生成：</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>单证</th><th>自动打印时机</th></tr></thead>
+        <tbody>
+          <tr><td>保全<a class="xref" href="terms.html#endorsement-doc">批单</a></td><td><a class="xref" href="terms.html#tqt">团险通</a>渠道保全确认生效时</td></tr>
+          <tr><td>团险保全交费<a class="xref" href="terms.html#notice">通知书</a></td><td>审批通过生成后</td></tr>
+          <tr><td><a class="xref" href="terms.html#settle">定期结算</a>交费通知书</td><td>开通定期结算保单生成后</td></tr>
+          <tr><td>团险交费通知书 / 转账不成功通知书</td><td>月交单生成后 / 转账失败生成后</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li>打印菜单查询逻辑从"仅未打印"调整为"未打印 + 已自动打印"，自动打印件可在打印菜单人工打印（无需走重打菜单）；选中已自动打印件时打印按钮置灰。</li>
+        <li><b>下载兜底</b>：团险通下载时若单证未打印，先返回"请稍后再试"，核心当日调用打印次数 &lt; 2 则自动补打印——兼顾体验与防重。</li>
+      </ul>
+    </div>
+
+    <div class="doc-block" id="deadline">
+      <h2>交费截止日期取值</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>通知书</th><th>交费截止日期</th></tr></thead>
+        <tbody>
+          <tr><td>团险保全交费<a class="xref" href="terms.html#notice">通知书</a></td><td>生成通知书日期 + 30 自然日（次日为第 1 日）。例：4 月 1 日生成 → 5 月 1 日</td></tr>
+          <tr><td><a class="xref" href="terms.html#settle">定期结算</a>交费通知书</td><td>定期结算审批通过日期 + 30 自然日</td></tr>
+          <tr><td>团险交费通知书（月交）</td><td>保持系统原逻辑不变</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><b>注意</b>："生成日期"指通知书生成之日，而非打印日期。原逻辑（应交日期 + 15 自然日）已废止。逾期未交费的保全申请将自动终止（短信模板中亦有此提示）。</div>
+    </div>
+
+    <div class="doc-block" id="problem-p">
+      <h2>问题件闭环</h2>
+      <div class="vflow">
+        <div class="vstep alt">
+          <div class="vs-title">下发</div>
+          <div class="vs-body">运营人员在人工核保 / 审批页面下发<a class="xref" href="terms.html#problem">问题件</a>。互斥规则：有未回复问题件则不能重复下发；<a class="xref" href="terms.html#tqt">团险通</a>渠道只能下发"核保补充资料问题件"，非团险通渠道反之。存在未处理问题件时不能下核保 / 审批结论。</div>
+        </div>
+        <div class="vstep">
+          <div class="vs-title">线上处理</div>
+          <div class="vs-body">客户在团险通补充资料（4.3.9）或修改银行信息（4.3.8），核心自动归档影像、回销<a class="xref" href="terms.html#notice">通知书</a>。</div>
+        </div>
+        <div class="vstep alt">
+          <div class="vs-title">自动核销</div>
+          <div class="vs-body">问题件状态 →"已处理"，回复人员 Auto-GrpChannel，回复日期取团险通提交成功之日；转账不成功件处理后保全可重新付费，并反馈业务进度（确认生效 / 付费中）给团险通。</div>
+        </div>
+      </div>
+      <p>问题件管理中，核保补充资料问题件的扫描人员默认 Auto-GrpChannel；转账不成功问题件下发人员默认为 AUTO；线上处理的转账不成功件无<a class="xref" href="terms.html#image">影像件</a>，详情页【通知书回销影像查询】按钮置灰。</p>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="f-bottom" style="border-top:none">
+    <span><a class="back-home" href="index.html" style="color:#a89c8f">← 返回主界面</a></span>
+    <span>底层原理</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
